@@ -1,0 +1,336 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Happy 2nd Anniversary — Decorator</title>
+  <style>
+    /* --- Page styling (simple, romantic pink) --- */
+    :root{--pink:#ffd3e0;--panel:#fff0f3;--accent:#ff5777}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;color:#222}
+    body{background:linear-gradient(180deg,var(--pink),#ffe6ef);display:flex;align-items:center;justify-content:center;padding:18px}
+    .card{width:100%;max-width:920px;background:var(--panel);border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,0.12);overflow:hidden}
+    header{padding:14px 18px;background:transparent;display:flex;gap:10px;align-items:center}
+    header h1{font-size:18px;margin:0}
+    .toolbar{display:flex;gap:8px;align-items:center;margin-left:auto}
+    button{background:white;border:1px solid rgba(0,0,0,0.06);padding:8px 10px;border-radius:8px;cursor:pointer}
+    button.important{background:var(--accent);color:white;border:none}
+    .main{display:flex;gap:14px;padding:18px}/* Editor area */
+.canvas-wrap{background:linear-gradient(180deg,#fff,#fff6f9);border-radius:10px;flex:1;display:flex;align-items:center;justify-content:center;padding:16px}
+#editor{position:relative;width:800px;height:600px;background:#f8f0f4;border-radius:10px;overflow:hidden;border:4px solid rgba(255,255,255,0.6)}
+
+/* Default hint shown when no image uploaded */
+.hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;color:#9a6b7d;font-weight:600}
+
+/* Uploaded photo fills the area */
+#photo{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover}
+
+/* Overlay items (decorations) */
+.overlay{position:absolute;touch-action:none;user-select:none;display:flex;align-items:center;justify-content:center}
+.overlay .handle{position:absolute;width:18px;height:18px;background:white;border-radius:50%;right:-9px;bottom:-9px;border:2px solid rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;font-size:12px}
+.overlay .svg-ico{width:100%;height:100%;display:block}
+
+/* presets panel */
+.panel{width:240px;display:flex;flex-direction:column;gap:10px}
+.panel h3{margin:0;font-size:14px}
+.presets{display:flex;gap:8px;flex-wrap:wrap}
+.preset{width:64px;height:64px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:1px dashed rgba(0,0,0,.06);background:white}
+.preset svg{width:46px;height:46px}
+
+/* text controls */
+label{font-size:13px}
+input[type=file]{display:none}
+.small{font-size:13px;padding:6px 8px}
+
+/* responsive */
+@media (max-width:980px){#editor{width:700px;height:520px}} 
+@media (max-width:720px){.main{flex-direction:column}.panel{width:100%}#editor{width:100%;height:420px}}
+
+  </style>
+</head>
+<body>
+  <div class="card">
+    <header>
+      <h1>Happy 2nd Anniversary — Decorator</h1>
+      <div class="toolbar">
+        <label class="small" for="fileInput" style="cursor:pointer">Upload photo</label>
+        <input id="fileInput" type="file" accept="image/*">
+        <button id="downloadBtn" class="important">Download</button>
+      </div>
+    </header><div class="main">
+  <div class="canvas-wrap">
+    <div id="editor" aria-label="decorator area">
+      <div class="hint" id="hint">Upload a photo to start decorating</div>
+      <img id="photo" alt="uploaded photo" src="" style="display:none">
+      <!-- Overlays will be appended here -->
+    </div>
+  </div>
+
+  <aside class="panel">
+    <h3>Presets</h3>
+    <div class="presets">
+      <button class="preset" data-type="heart" title="Add heart">
+        <!-- simple heart svg -->
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#ff4d6d" d="M12 21s-7-4.35-9.5-7.05C-1.1 8.9 4 4 7.5 6.5 9.2 7.9 10 10 12 11.6 14 10 14.8 7.9 16.5 6.5 20 4 25.1 8.9 21.5 13.95 19 16.65 12 21 12 21z"/></svg>
+      </button>
+
+      <button class="preset" data-type="rose" title="Add rose">
+        <!-- stylized rose SVG -->
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><g><path fill="#ff5f7a" d="M32 10c-8 0-14 6-14 14 0 6 8 12 14 20 6-8 14-14 14-20 0-8-6-14-14-14z"/><path fill="#8c2b3b" d="M32 40s-2 12-2 14h4c0-2-2-14-2-14z"/></g></svg>
+      </button>
+
+      <button class="preset" data-type="balloon" title="Add balloon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#ff9fb1" d="M12 2a6 6 0 00-6 6c0 4 3 7 6 10 3-3 6-6 6-10a6 6 0 00-6-6zm0 18v4"/></svg>
+      </button>
+
+      <button class="preset" data-type="text" title="Add text">A</button>
+    </div>
+
+    <h3>Text quick pick</h3>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="small" id="presetText1">Happy 2nd Anniversary</button>
+      <button class="small" id="presetText2">Happy 2nd Anniversary My Pink Heart ❤️</button>
+    </div>
+
+    <h3>Tips</h3>
+    <p style="margin:0;font-size:13px">Tap or drag items to move. Use the bottom-right handle to resize. When ready press Download.</p>
+  </aside>
+</div>
+
+  </div>  <script>
+    /* Simple decorator app, single-file
+       - No external libraries
+       - Works with mouse and touch (pointer events)
+       - Overlays are absolutely positioned elements inside #editor
+       - Download stitches the base photo and overlays into a canvas image
+    */
+
+    const fileInput = document.getElementById('fileInput');
+    const photo = document.getElementById('photo');
+    const hint = document.getElementById('hint');
+    const editor = document.getElementById('editor');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    // Keep track of overlay items
+    let overlays = [];
+
+    // Load photo chosen by user
+    fileInput.addEventListener('change', e => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const url = URL.createObjectURL(f);
+      photo.src = url; photo.style.display = 'block';
+      hint.style.display = 'none';
+
+      // ensure natural size loads before we allow download
+      photo.onload = () => {
+        // nothing else needed for now
+      }
+    });
+
+    // Helper to create overlay element
+    function createOverlay(type, options = {}){
+      const el = document.createElement('div');
+      el.className = 'overlay';
+      el.dataset.type = type;
+      el.style.left = (options.x || 120) + 'px';
+      el.style.top = (options.y || 120) + 'px';
+      el.style.width = (options.w || 140) + 'px';
+      el.style.height = (options.h || 140) + 'px';
+
+      // content
+      if (type === 'text'){
+        const t = document.createElement('div');
+        t.contentEditable = true;
+        t.innerText = options.text || 'My Pink Heart';
+        t.style.fontWeight = '700';
+        t.style.textAlign = 'center';
+        t.style.cursor = 'move';
+        t.style.fontFamily = 'Georgia, serif';
+        t.style.fontSize = '26px';
+        t.style.color = '#8b1532';
+        t.style.padding = '6px';
+        t.style.pointerEvents = 'none'; // we handle pointer on parent
+        el.appendChild(t);
+      } else {
+        // create an inline SVG based on type
+        const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+        svg.setAttribute('viewBox', type==='heart'? '0 0 24 24' : type==='rose' ? '0 0 64 64' : '0 0 24 24');
+        svg.classList.add('svg-ico');
+        if (type==='heart'){
+          svg.innerHTML = '<path fill="#ff4d6d" d="M12 21s-7-4.35-9.5-7.05C-1.1 8.9 4 4 7.5 6.5 9.2 7.9 10 10 12 11.6 14 10 14.8 7.9 16.5 6.5 20 4 25.1 8.9 21.5 13.95 19 16.65 12 21 12 21z"/>'
+        } else if (type==='rose'){
+          svg.innerHTML = '<g><path fill="#ff5f7a" d="M32 10c-8 0-14 6-14 14 0 6 8 12 14 20 6-8 14-14 14-20 0-8-6-14-14-14z"/><path fill="#8c2b3b" d="M32 40s-2 12-2 14h4c0-2-2-14-2-14z"/></g>'
+        } else if (type==='balloon'){
+          svg.innerHTML = '<path fill="#ff9fb1" d="M12 2a6 6 0 00-6 6c0 4 3 7 6 10 3-3 6-6 6-10a6 6 0 00-6-6zm0 18v4"/>'
+        }
+        el.appendChild(svg);
+      }
+
+      // add resize handle
+      const handle = document.createElement('div');
+      handle.className = 'handle';
+      handle.innerHTML = '&#8690;';
+      el.appendChild(handle);
+
+      // attach events
+      makeInteractive(el, handle);
+
+      editor.appendChild(el);
+      overlays.push(el);
+      return el;
+    }
+
+    // Wire up preset buttons
+    document.querySelectorAll('.preset').forEach(b => {
+      b.addEventListener('click', () => {
+        const type = b.dataset.type;
+        createOverlay(type,{x: 220, y: 140, w:120, h:120});
+      });
+    });
+
+    document.getElementById('presetText1').addEventListener('click', ()=>createOverlay('text',{text:'Happy 2nd Anniversary', x:160,y:60,w:400,h:80}));
+    document.getElementById('presetText2').addEventListener('click', ()=>createOverlay('text',{text:'Happy 2nd Anniversary My Pink Heart ❤️', x:140,y:100,w:480,h:80}));
+
+    // Make element draggable and resizable using pointer events
+    function makeInteractive(el, handle){
+      let startX, startY, startLeft, startTop, startW, startH;
+
+      // drag
+      el.addEventListener('pointerdown', e => {
+        if (e.target === handle) return; // handle used for resize
+        el.setPointerCapture(e.pointerId);
+        startX = e.clientX; startY = e.clientY;
+        startLeft = parseFloat(el.style.left);
+        startTop = parseFloat(el.style.top);
+
+        function move(ev){
+          const dx = ev.clientX - startX; const dy = ev.clientY - startY;
+          el.style.left = (startLeft + dx) + 'px';
+          el.style.top = (startTop + dy) + 'px';
+        }
+        function up(ev){
+          el.releasePointerCapture(e.pointerId);
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', up);
+        }
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+      });
+
+      // resize using handle
+      handle.addEventListener('pointerdown', e => {
+        e.stopPropagation();
+        el.setPointerCapture(e.pointerId);
+        startX = e.clientX; startY = e.clientY;
+        startW = parseFloat(el.style.width);
+        startH = parseFloat(el.style.height);
+        startLeft = parseFloat(el.style.left);
+        startTop = parseFloat(el.style.top);
+
+        function move(ev){
+          const dx = ev.clientX - startX; const dy = ev.clientY - startY;
+          const newW = Math.max(30, startW + dx);
+          const newH = Math.max(30, startH + dy);
+          el.style.width = newW + 'px';
+          el.style.height = newH + 'px';
+        }
+        function up(ev){
+          el.releasePointerCapture(e.pointerId);
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', up);
+        }
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+      });
+
+      // double tap to remove
+      el.addEventListener('dblclick', ()=>{ el.remove(); overlays = overlays.filter(o=>o!==el); });
+    }
+
+    // Build final image and download
+    downloadBtn.addEventListener('click', async ()=>{
+      if (!photo.src){ alert('Please upload a photo first'); return }
+
+      // create canvas matching editor size (CSS pixels)
+      const rect = editor.getBoundingClientRect();
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(rect.width);
+      canvas.height = Math.round(rect.height);
+      const ctx = canvas.getContext('2d');
+
+      // draw photo scaled to fill
+      // compute cover scaling (like object-fit:cover)
+      const img = photo;
+      const iw = img.naturalWidth, ih = img.naturalHeight;
+      const cw = canvas.width, ch = canvas.height;
+      const scale = Math.max(cw/iw, ch/ih);
+      const sw = iw*scale, sh = ih*scale;
+      const sx = (cw - sw)/2, sy = (ch - sh)/2;
+      ctx.drawImage(img, sx, sy, sw, sh);
+
+      // draw each overlay: if svg -> convert to image then draw; if text -> draw text
+      for (const ov of overlays){
+        // skip removed elements
+        if (!ov.isConnected) continue;
+        const left = parseFloat(ov.style.left) || 0;
+        const top = parseFloat(ov.style.top) || 0;
+        const w = parseFloat(ov.style.width);
+        const h = parseFloat(ov.style.height);
+
+        if (ov.dataset.type === 'text'){
+          const txt = ov.querySelector('div').innerText;
+          // draw with wrap
+          ctx.font = Math.round(h*0.45) + 'px Georgia';
+          ctx.fillStyle = '#8b1532';
+          ctx.textAlign = 'center';
+          // basic wrap: split by newline or space into words
+          const words = txt.split(' ');
+          const maxWidth = w * 0.9;
+          let line = '', y = top + h*0.45;
+          const cx = left + w/2;
+          for (let n=0;n<words.length;n++){
+            const test = line + words[n] + ' ';
+            const metrics = ctx.measureText(test);
+            if (metrics.width > maxWidth && n>0){
+              ctx.fillText(line.trim(), cx, y);
+              line = words[n] + ' ';
+              y += h*0.45;
+            } else { line = test }
+          }
+          ctx.fillText(line.trim(), cx, y);
+        } else {
+          // SVG inside overlay
+          const svg = ov.querySelector('svg');
+          if (!svg) continue;
+          const svgStr = new XMLSerializer().serializeToString(svg);
+          const svgBlob = new Blob([svgStr], {type: 'image/svg+xml;charset=utf-8'});
+          const url = URL.createObjectURL(svgBlob);
+          await new Promise((res)=>{
+            const im = new Image();
+            im.onload = ()=>{ ctx.drawImage(im, left, top, w, h); URL.revokeObjectURL(url); res(); };
+            im.onerror = ()=>{ URL.revokeObjectURL(url); res(); };
+            im.src = url;
+          });
+        }
+      }
+
+      // save
+      const link = document.createElement('a');
+      link.download = 'happy-2nd-anniversary.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+
+    // Accessibility small keyboard support: add by pressing keys
+    window.addEventListener('keydown', e=>{
+      if (e.key === 'h') createOverlay('heart');
+      if (e.key === 'r') createOverlay('rose');
+      if (e.key === 't') createOverlay('text',{text:'Happy 2nd Anniversary My Pink Heart ❤️'});
+    });
+
+    // Initialize with a pre-added romantic text so user can tweak immediately
+    createOverlay('text',{text:'Happy 2nd Anniversary My Pink Heart ❤️', x:120,y:30,w:520,h:70});
+  </script></body>
+</html>
