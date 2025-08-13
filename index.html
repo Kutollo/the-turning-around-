@@ -14,15 +14,19 @@ textarea { width:100%; height:100px; padding:10px; border-radius:10px; border:1p
 canvas { background:#fff; border-radius:15px; padding:10px; margin-top:20px; }
 .btn { background:#6366f1; color:white; border:none; padding:10px 15px; border-radius:8px; cursor:pointer; margin-top:10px; }
 #timer { text-align:center; font-size:1.2em; font-weight:bold; margin-bottom:15px; color:#111; }
+.verse { background:#eef2ff; padding:10px; border-radius:10px; margin:10px 0; }
+.prayer-point { background:#fef3c7; padding:10px; border-radius:10px; margin:10px 0; }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>10-Day Fasting & Prayer Smart Guide</h1>
+  <h1>10-Day Fasting & Prayer Guide</h1>
   <div id="timer">Loading timer...</div>
   <div class="day-card">
     <strong id="dayTitle"></strong>
     <p id="dayFocus"></p>
+    <div id="verse" class="verse"></div>
+    <div id="prayerPoints" class="prayer-point"></div>
     <div id="prayerBlocks"></div>
     <textarea id="notes" placeholder="Journal notes..."></textarea>
     <button class="btn" onclick="saveNotes()">Save Notes</button>
@@ -33,17 +37,22 @@ canvas { background:#fff; border-radius:15px; padding:10px; margin-top:20px; }
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script>
+// Start date is tomorrow
+let startISO = new Date();
+startISO.setDate(startISO.getDate()+1);
+startISO = startISO.toISOString().slice(0,10);
+
 const PLAN = [
-  { day:1, type:"Water", focus:"Cleansing & repentance", scripture:"Psalm 51:10–12" },
-  { day:2, type:"Dry", focus:"Break sexual strongholds", scripture:"1 Thess 4:3–4" },
-  { day:3, type:"Water", focus:"Renewed mind & purity", scripture:"Rom 12:1–2" },
-  { day:4, type:"Esther", focus:"R60 000 fees breakthrough", scripture:"Esther 4:16" },
-  { day:5, type:"Water", focus:"Provision & favour", scripture:"Phil 4:19" },
-  { day:6, type:"Dry", focus:"Brother: freedom from alcohol", scripture:"Isa 61:1–3" },
-  { day:7, type:"Water", focus:"Family forgiveness & restoration", scripture:"Col 3:13" },
-  { day:8, type:"Dry", focus:"Healing from depression", scripture:"Psalm 34:17–18" },
-  { day:9, type:"Water", focus:"Thanksgiving & sealing", scripture:"Phil 4:6–7" },
-  { day:10, type:"Esther", focus:"Final push for all points", scripture:"Joel 2:12–13" },
+  { day:1, type:"Water", focus:"Cleansing & repentance", scripture:"Psalm 51:10–12", prayerPoints:["Repent of all sin","Ask for cleansing","Pray for pure heart"] },
+  { day:2, type:"Dry", focus:"Break sexual strongholds", scripture:"1 Thess 4:3–4", prayerPoints:["Break lust","Pray for self-control","Resist temptation"] },
+  { day:3, type:"Water", focus:"Renewed mind & purity", scripture:"Romans 12:1–2", prayerPoints:["Renew mind","Pray for holiness","Commit to righteousness"] },
+  { day:4, type:"Esther", focus:"R60 000 fees breakthrough", scripture:"Esther 4:16", prayerPoints:["Pray for funding","Open financial doors","Trust God's provision"] },
+  { day:5, type:"Water", focus:"Provision & favour", scripture:"Philippians 4:19", prayerPoints:["Bless finances","Ask for favour","Receive provision"] },
+  { day:6, type:"Dry", focus:"Brother: freedom from alcohol", scripture:"Isaiah 61:1–3", prayerPoints:["Deliver brother","Pray for strength","Break addictions"] },
+  { day:7, type:"Water", focus:"Family forgiveness & restoration", scripture:"Colossians 3:13", prayerPoints:["Forgive family","Restore relationships","Pray for unity"] },
+  { day:8, type:"Dry", focus:"Healing from depression", scripture:"Psalm 34:17–18", prayerPoints:["Pray for healing","Peace of mind","Joy restoration"] },
+  { day:9, type:"Water", focus:"Thanksgiving & sealing", scripture:"Philippians 4:6–7", prayerPoints:["Thank God","Seal breakthroughs","Praise continually"] },
+  { day:10, type:"Esther", focus:"Final push for all points", scripture:"Joel 2:12–13", prayerPoints:["Cover all prayers","Pray for victory","Commit fully"] },
 ];
 
 const PRAYER_BLOCKS = [
@@ -53,7 +62,6 @@ const PRAYER_BLOCKS = [
   { key:"midnight", label:"00:00 Midnight Intercession (optional)" },
 ];
 
-let startISO = localStorage.getItem('fs_start') || new Date().toISOString().slice(0,10);
 let checks = JSON.parse(localStorage.getItem('fs_checks') || '{}');
 let notes = localStorage.getItem('fs_notes') || '';
 
@@ -67,10 +75,14 @@ function getCurrentDay() {
 function renderDay() {
   const idx = getCurrentDay();
   const day = PLAN[idx];
-  document.getElementById('dayTitle').innerText = `Day ${day.day}: ${day.type} Fast`;
-  document.getElementById('dayFocus').innerText = day.focus;
+  const todayDate = new Date(startISO);
+  todayDate.setDate(todayDate.getDate() + day.day - 1);
+  const formattedDate = todayDate.toDateString();
 
-  alert(`Today's Scripture: ${day.scripture}`);
+  document.getElementById('dayTitle').innerText = `Day ${day.day}: ${day.type} Fast (${formattedDate})`;
+  document.getElementById('dayFocus').innerText = day.focus;
+  document.getElementById('verse').innerText = `Verse: ${day.scripture}`;
+  document.getElementById('prayerPoints').innerHTML = `Prayer Points:<ul>${day.prayerPoints.map(p=>`<li>${p}</li>`).join('')}</ul>`;
 
   const pbContainer = document.getElementById('prayerBlocks');
   pbContainer.innerHTML = '';
@@ -89,7 +101,6 @@ function toggleCheck(key) {
   localStorage.setItem('fs_checks', JSON.stringify(checks));
   renderProgressChart();
 
-  // Confetti if all prayer blocks checked
   if(Object.values(checks[`d${day}`]).filter(v=>v).length === PRAYER_BLOCKS.length){
     confetti({ particleCount: 150, spread: 70, origin:{y:0.6} });
   }
@@ -127,14 +138,15 @@ function renderProgressChart() {
   });
 }
 
-// Countdown timer
+// Countdown timer 12:00 AM - 5:00 PM
 function updateTimer() {
   const now = new Date();
   const start = new Date();
   start.setHours(0,0,0,0);
   const end = new Date();
-  end.setHours(17,0,0,0); // 5 PM
+  end.setHours(17,0,0,0);
   let diff = now<start ? start-now : end-now;
+  if(diff<0) diff = 0;
   const hrs = Math.floor(diff/1000/60/60);
   const mins = Math.floor((diff/1000/60)%60);
   const secs = Math.floor((diff/1000)%60);
@@ -142,8 +154,7 @@ function updateTimer() {
   document.getElementById('timer').innerText = `${label}: ${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
 }
 
-setInterval(updateTimer, 1000);
-
+setInterval(updateTimer,1000);
 renderDay();
 renderProgressChart();
 </script>
