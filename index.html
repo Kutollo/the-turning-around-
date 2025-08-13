@@ -1,268 +1,276 @@
-<!doctype html>
+import React, { useEffect, useMemo, useRef, useState } from "react"; import { motion, AnimatePresence } from "framer-motion"; import { CheckCircle, Clock, Droplet, Flame, PlayCircle, PauseCircle, RefreshCcw, Download, Calendar as CalendarIcon, Moon, Sun, Sparkles, ListChecks, FileText, PenLine, BellRing, Share2, Upload, DownloadCloud, X, ChevronDown, ChevronUp } from "lucide-react"; import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Smile Detect Anniversary Surprise</title>
-  <style>
-    :root{--pink:#ffd3e0;--panel:#fff0f3;--accent:#ff5777}
-    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;color:#222}
-    body{background:linear-gradient(180deg,var(--pink),#ffe6ef);display:flex;align-items:center;justify-content:center;padding:18px}
-    .card{width:100%;max-width:980px;background:var(--panel);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.12);overflow:hidden}
-    header{padding:12px 16px;display:flex;align-items:center}
-    header h1{font-size:18px;margin:0}
-    .controls{margin-left:auto;display:flex;gap:10px;align-items:center}
-    button{background:white;border:1px solid rgba(0,0,0,0.06);padding:8px 10px;border-radius:8px;cursor:pointer}
-    button.important{background:var(--accent);color:white;border:none}.main{display:flex;gap:14px;padding:16px}
-.left{flex:1;display:flex;flex-direction:column;gap:12px}
-.video-wrap{position:relative;border-radius:12px;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center;height:420px}
-video#webcam{width:100%;height:100%;object-fit:cover}
+// ---- Utility helpers ---- const pad = (n) => (n < 10 ? 0${n} : ${n}); const todayISO = () => new Date().toISOString().slice(0, 10); const toISO = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); const fromISO = (iso) => new Date(${iso}T00:00:00); const storage = { get: (k, def) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; } }, set: (k, v) => localStorage.setItem(k, JSON.stringify(v)), };
 
-/* overlay message */
-.message{position:absolute;left:50%;transform:translateX(-50%);top:14px;padding:10px 14px;border-radius:999px;background:rgba(255,255,255,0.92);font-weight:700;color:#8b1532;box-shadow:0 6px 18px rgba(0,0,0,0.12);display:flex;align-items:center;gap:10px}
-.message.hidden{display:none}
+// ---- Data ---- const PLAN = [ { day: 1, type: "Water (sunrise–sunset)", icon: Droplet, focus: "Cleansing & repentance", scriptures: ["Psalm 51:10–12", "1 John 1:9"] }, { day: 2, type: "Dry (6:00–18:00)", icon: Flame, focus: "Break sexual strongholds", scriptures: ["1 Thess 4:3–4", "2 Cor 10:4–5"] }, { day: 3, type: "Water (sunrise–sunset)", icon: Droplet, focus: "Renewed mind & purity", scriptures: ["Rom 12:1–2", "Psalm 119:9–11"] }, { day: 4, type: "Esther (24h dry)", icon: Flame, focus: "R60 000 fees breakthrough", scriptures: ["Esther 4:16", "Matt 17:21"] }, { day: 5, type: "Water (sunrise–sunset)", icon: Droplet, focus: "Provision & favour", scriptures: ["Phil 4:19", "Mal 3:10"] }, { day: 6, type: "Dry (6:00–18:00)", icon: Flame, focus: "Brother: freedom from alcohol", scriptures: ["Isa 61:1–3", "Luke 15:17–24"] }, { day: 7, type: "Water (sunrise–sunset)", icon: Droplet, focus: "Family forgiveness & restoration", scriptures: ["Col 3:13", "Eph 4:31–32"] }, { day: 8, type: "Dry (6:00–18:00)", icon: Flame, focus: "Healing from depression", scriptures: ["Psalm 34:17–18", "Isa 41:10"] }, { day: 9, type: "Water (sunrise–sunset)", icon: Droplet, focus: "Thanksgiving & sealing", scriptures: ["Phil 4:6–7", "Psalm 100"] }, { day: 10, type: "Esther (24h dry)", icon: Flame, focus: "Final push for all points", scriptures: ["Joel 2:12–13", "James 5:16"] }, ];
 
-/* slideshow area sits above video but hidden until triggered */
-.slideshow{position:absolute;inset:0;display:none;align-items:center;justify-content:center}
-.slideshow.show{display:flex}
-.slide{position:absolute;max-width:90%;max-height:90%;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,0.35);object-fit:cover}
+const DEFAULT_WINDOWS = { waterStart: "06:00", waterEnd: "18:00", dryStart: "06:00", dryEnd: "18:00", estherStart: "00:00", estherEnd: "24:00", };
 
-.right{width:300px}
-.panel{background:white;border-radius:10px;padding:12px}
-.panel h3{margin:0 0 8px 0}
-input[type=file]{display:block}
-label.small{font-size:13px}
+const PRAYER_BLOCKS = [ { key: "worship", label: "5:00 Worship + Repent" }, { key: "noon", label: "12:00 Scripture Declarations" }, { key: "pm", label: "15:00 Warfare & Binding" }, { key: "midnight", label: "00:00 Midnight Intercession (optional)" }, ];
 
-footer{padding:10px 16px;font-size:13px;color:#6b3a45}
+const AFFIRMATIONS = [ "I am set apart; my body is a temple of the Holy Spirit (1 Cor 6:19).", "I flee sexual immorality and pursue righteousness (2 Tim 2:22).", "The Lord supplies all my needs according to His riches in glory (Phil 4:19).", "The anointing breaks the yoke over my family (Isa 10:27).", "God has not given us a spirit of fear, but of power, love, and sound mind (2 Tim 1:7).", ];
 
-@media (max-width:820px){.main{flex-direction:column}.right{width:100%}.video-wrap{height:320px}}
+// Turn HH:MM to today Date const timeToDate = (iso, hhmm) => { const [h, m] = hhmm.split(":").map(Number); const d = fromISO(iso); d.setHours(h, m, 0, 0); return d; };
 
-  </style>
-</head>
-<body>
-  <div class="card">
-    <header>
-      <h1>Smile Detect Anniversary Surprise</h1>
-      <div class="controls">
-        <button id="startBtn">Start Camera</button>
-        <button id="stopBtn">Stop Camera</button>
-        <button id="testSmile">Test Smile</button>
+const within = (now, a, b) => now >= a && now <= b;
+
+const NiceCard = ({ children, className = "" }) => (
+
+  <div className={`rounded-2xl shadow-lg p-5 bg-white/80 backdrop-blur border border-black/5 ${className}`}>{children}</div>
+);const Badge = ({ children }) => ( <span className="px-3 py-1 rounded-full border text-xs font-semibold bg-white/60">{children}</span> );
+
+export default function FastingSmartGuide() { const [startISO, setStartISO] = useState(() => storage.get("fs_start", todayISO())); const [windows, setWindows] = useState(() => ({ ...DEFAULT_WINDOWS, ...storage.get("fs_windows", {}) })); const [notes, setNotes] = useState(() => storage.get("fs_notes", "")); const [checks, setChecks] = useState(() => storage.get("fs_checks", {})); // { isoDayKey: { worship:true, ... } } const [expanded, setExpanded] = useState(true); const [importing, setImporting] = useState(false); const [showWinEdit, setShowWinEdit] = useState(false);
+
+useEffect(() => storage.set("fs_start", startISO), [startISO]); useEffect(() => storage.set("fs_windows", windows), [windows]); useEffect(() => storage.set("fs_notes", notes), [notes]); useEffect(() => storage.set("fs_checks", checks), [checks]);
+
+// Derive current day index const now = new Date(); const start = fromISO(startISO); const diffDays = Math.floor((new Date(toISO(now)) - start) / (1000 * 60 * 60 * 24)); const currentIdx = Math.min(Math.max(diffDays, 0), PLAN.length - 1); const currentPlan = PLAN[currentIdx]; const currentISO = toISO(now); const dayKey = ${currentISO}_d${currentPlan.day};
+
+// Fasting window for today by type const [startKey, endKey] = useMemo(() => { const type = currentPlan.type; if (type.startsWith("Water")) return ["waterStart", "waterEnd"]; if (type.startsWith("Dry")) return ["dryStart", "dryEnd"]; return ["estherStart", "estherEnd"]; // Esther }, [currentPlan.type]);
+
+const startTime = timeToDate(currentISO, windows[startKey]); const endTime = timeToDate(currentISO, windows[endKey] === "24:00" ? "23:59" : windows[endKey]); const inWindow = within(now, startTime, endTime); const [tick, setTick] = useState(0); useEffect(() => { const id = setInterval(() => setTick((t) => t + 1), 1000); return () => clearInterval(id); }, []);
+
+// Countdown text const msLeft = Math.max(0, (inWindow ? endTime : startTime) - now); const hh = Math.floor(msLeft / 3600000); const mm = Math.floor((msLeft % 3600000) / 60000); const ss = Math.floor((msLeft % 60000) / 1000); const countdownLabel = inWindow ? "Time left in today’s fast" : "Time until fast starts";
+
+// Progress data const progress = useMemo(() => { return PLAN.map((p, i) => { const iso = toISO(new Date(start.getTime() + i * 86400000)); const c = checks[${iso}_d${p.day}] || {}; const done = PRAYER_BLOCKS.filter((b) => c[b.key]).length; const pct = Math.round((done / PRAYER_BLOCKS.length) * 100); return { name: D${p.day}, completion: pct }; }); }, [checks, startISO]);
+
+// Handlers const toggleCheck = (key) => { setChecks((old) => ({ ...old, [dayKey]: { ...(old[dayKey] || {}), [key]: !(old[dayKey]?.[key]) } })); };
+
+const resetToday = () => setChecks((old) => ({ ...old, [dayKey]: {} }));
+
+const exportData = () => { const blob = new Blob([JSON.stringify({ startISO, windows, notes, checks }, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = fasting_smart_guide_${startISO}.json; a.click(); URL.revokeObjectURL(url); };
+
+const onImport = (e) => { const file = e.target.files?.[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const obj = JSON.parse(reader.result); if (obj.startISO) setStartISO(obj.startISO); if (obj.windows) setWindows(obj.windows); if (obj.notes !== undefined) setNotes(obj.notes); if (obj.checks) setChecks(obj.checks); setImporting(false); } catch (err) { alert("Invalid file"); } }; reader.readAsText(file); };
+
+const shareWhatsApp = () => { const msg = encodeURIComponent( Day ${currentPlan.day} – ${currentPlan.type}\nFocus: ${currentPlan.focus}\nScriptures: ${currentPlan.scriptures.join(", ")}\n\nProgress: ${PRAYER_BLOCKS.map(b => ${b.label.split(" ")[0]}:${checks[dayKey]?.[b.key] ? "✅" : "⬜"}).join(" ")}\n); window.open(https://wa.me/?text=${msg}, "_blank"); };
+
+const confettiRef = useRef(null); useEffect(() => { const allDone = PRAYER_BLOCKS.every((b) => checks[dayKey]?.[b.key]); if (allDone && !confettiRef.current) { confettiRef.current = true; // tiny confetti without deps const burst = () => { const c = document.createElement("canvas"); c.style.position = "fixed"; c.style.inset = "0"; c.style.pointerEvents = "none"; c.width = innerWidth; c.height = innerHeight; document.body.appendChild(c); const ctx = c.getContext("2d"); const parts = Array.from({ length: 120 }, () => ({ x: innerWidth/2, y: innerHeight/2, vx: (Math.random()-0.5)*8, vy: (Math.random()-1)*10, g: 0.25 + Math.random()*0.2, r: 2 + Math.random()3 })); let t = 0; const anim = () => { t++; ctx.clearRect(0,0,c.width,c.height); parts.forEach(p=>{ p.vy += p.g; p.x+=p.vx; p.y+=p.vy; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI2); ctx.fill();}); if (t<150) requestAnimationFrame(anim); else c.remove();}; anim(); }; burst(); setTimeout(() => { confettiRef.current = false; }, 5000); } }, [checks, dayKey]);
+
+const printable = () => window.print();
+
+const completionToday = PRAYER_BLOCKS.filter((b) => checks[dayKey]?.[b.key]).length;
+
+return ( <div className="min-h-screen w-full bg-gradient-to-br from-indigo-50 via-white to-purple-50 text-slate-900"> <div className="max-w-6xl mx-auto p-4 sm:p-8"> {/* Header */} <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"> <div className="flex items-center gap-3"> <Sparkles className="w-8 h-8" /> <div> <h1 className="text-2xl sm:text-3xl font-bold">10‑Day Fasting & Prayer – Smart Guide</h1> <p className="text-sm opacity-80">Focus: Purity • Fees Provision • Family Deliverance & Healing</p> </div> </div>
+
+<div className="flex flex-wrap items-center gap-2">
+        <button onClick={printable} className="rounded-2xl px-4 py-2 shadow bg-white border flex items-center gap-2"><FileText className="w-4 h-4"/> Print Guide</button>
+        <button onClick={exportData} className="rounded-2xl px-4 py-2 shadow bg-white border flex items-center gap-2"><DownloadCloud className="w-4 h-4"/> Export</button>
+        <button onClick={() => setImporting((v)=>!v)} className="rounded-2xl px-4 py-2 shadow bg-white border flex items-center gap-2"><Upload className="w-4 h-4"/> Import</button>
       </div>
-    </header><div class="main">
-  <div class="left">
-    <div class="video-wrap">
-      <video id="webcam" autoplay muted playsinline></video>
+    </header>
 
-      <div class="message hidden" id="messageBox">Happy 2 Years Anniversary My Pink Heart ❤️</div>
+    <AnimatePresence>
+      {importing && (
+        <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="my-3">
+          <NiceCard>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">Import backup</h3>
+              <button onClick={()=>setImporting(false)}><X className="w-4 h-4"/></button>
+            </div>
+            <input type="file" accept="application/json" onChange={onImport} className="block"/>
+          </NiceCard>
+        </motion.div>
+      )}
+    </AnimatePresence>
 
-      <div class="slideshow" id="slideshow">
-        <!-- slides inserted here -->
-      </div>
+    {/* Controls */}
+    <div className="grid md:grid-cols-3 gap-4 mt-6">
+      <NiceCard>
+        <div className="flex items-center gap-3 mb-3">
+          <CalendarIcon className="w-5 h-5"/>
+          <h2 className="font-semibold">Start Date</h2>
+        </div>
+        <input value={startISO} onChange={(e)=>setStartISO(e.target.value)} type="date" className="w-full rounded-xl border px-3 py-2"/>
+        <p className="text-xs mt-2 opacity-70">Today is counted as Day {currentPlan.day}.</p>
+      </NiceCard>
+
+      <NiceCard>
+        <div className="flex items-center gap-3 mb-2"><Clock className="w-5 h-5"/><h2 className="font-semibold">Fasting Window</h2></div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge>{currentPlan.type}</Badge>
+          <button onClick={()=>setShowWinEdit(true)} className="text-sm underline">Edit windows</button>
+        </div>
+        <div className="mt-3">
+          <p className="text-sm font-medium">{countdownLabel}</p>
+          <div className="text-2xl font-bold tabular-nums">{pad(hh)}:{pad(mm)}:{pad(ss)}</div>
+          <p className="text-xs opacity-70">{windows[startKey]} → {windows[endKey]}</p>
+        </div>
+      </NiceCard>
+
+      <NiceCard>
+        <div className="flex items-center gap-3 mb-2"><ListChecks className="w-5 h-5"/><h2 className="font-semibold">Today’s Progress</h2></div>
+        <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
+          <div className="h-full bg-black/80" style={{ width: `${(completionToday/PRAYER_BLOCKS.length)*100}%` }} />
+        </div>
+        <p className="text-xs mt-2">{completionToday}/{PRAYER_BLOCKS.length} prayer blocks done</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button onClick={resetToday} className="rounded-xl px-3 py-1 border bg-white flex items-center gap-2 text-sm"><RefreshCcw className="w-4 h-4"/> Reset day</button>
+          <button onClick={shareWhatsApp} className="rounded-xl px-3 py-1 border bg-white flex items-center gap-2 text-sm"><Share2 className="w-4 h-4"/> Share update</button>
+        </div>
+      </NiceCard>
     </div>
 
-    <div style="display:flex;gap:8px;align-items:center">
-      <button id="pauseSlides">Pause</button>
-      <button id="resumeSlides">Resume</button>
-      <button id="clearSlides">Clear Photos</button>
+    {/* Today Card */}
+    <div className="mt-6">
+      <NiceCard>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-bold flex items-center gap-2">Day {currentPlan.day} <Badge>{currentPlan.type}</Badge></h2>
+            <p className="opacity-80 mt-1">Focus: <span className="font-medium">{currentPlan.focus}</span></p>
+            <p className="text-sm mt-1">Scriptures: {currentPlan.scriptures.join(", ")}</p>
+          </div>
+          <div className="hidden sm:block">
+            {currentPlan.icon && React.createElement(currentPlan.icon, { className: "w-10 h-10" })}
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <h3 className="font-semibold mb-2">Prayer Blocks</h3>
+            <div className="space-y-2">
+              {PRAYER_BLOCKS.map((b) => (
+                <label key={b.key} className="flex items-center gap-3 p-2 rounded-xl border bg-white/60">
+                  <input type="checkbox" checked={!!checks[dayKey]?.[b.key]} onChange={()=>toggleCheck(b.key)} className="w-5 h-5" />
+                  <span className="text-sm">{b.label}</span>
+                  {checks[dayKey]?.[b.key] && <CheckCircle className="w-4 h-4 ml-auto"/>}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-semibold mb-2">Daily Journal</h3>
+            <textarea value={notes} onChange={(e)=>setNotes(e.target.value)} rows={8} placeholder="Write prayers, insights, and testimonies…" className="w-full rounded-xl border p-3"/>
+            <p className="text-xs mt-1 opacity-70">Auto‑saved locally • Tip: use <kbd>Ctrl/Cmd+P</kbd> to print as PDF.</p>
+          </div>
+        </div>
+      </NiceCard>
+    </div>
+
+    {/* Progress analytics */}
+    <div className="mt-6 grid lg:grid-cols-3 gap-4">
+      <NiceCard className="lg:col-span-2">
+        <div className="flex items-center gap-2 mb-2"><Sparkles className="w-4 h-4"/><h3 className="font-semibold">Consistency Tracker</h3></div>
+        <div className="w-full h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={progress} margin={{ left: 8, right: 8, top: 10, bottom: 0 }}>
+              <defs>
+                <linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="5%" stopColor="#000" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#000" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis domain={[0, 100]} tickFormatter={(v)=>`${v}%`} />
+              <Tooltip formatter={(v)=>[`${v}%`, "Completion"]} />
+              <Area type="monotone" dataKey="completion" stroke="#000" fillOpacity={1} fill="url(#g1)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </NiceCard>
+
+      <NiceCard>
+        <div className="flex items-center gap-2 mb-2"><BellRing className="w-4 h-4"/><h3 className="font-semibold">Affirmation</h3></div>
+        <p className="text-sm">{AFFIRMATIONS[(currentPlan.day + hh + mm) % AFFIRMATIONS.length]}</p>
+        <div className="mt-3 text-xs opacity-70">Rotates automatically.</div>
+      </NiceCard>
+    </div>
+
+    {/* All days accordion */}
+    <div className="mt-6">
+      <NiceCard>
+        <button onClick={()=>setExpanded(e=>!e)} className="w-full flex items-center justify-between">
+          <h3 className="font-semibold">Plan Overview (10 days)</h3>
+          {expanded ? <ChevronUp className="w-4 h-4"/> : <ChevronDown className="w-4 h-4"/>}
+        </button>
+        <AnimatePresence initial={false}>
+          {expanded && (
+            <motion.div initial={{height:0, opacity:0}} animate={{height:"auto", opacity:1}} exit={{height:0, opacity:0}} className="overflow-hidden">
+              <div className="grid md:grid-cols-2 gap-3 mt-3">
+                {PLAN.map((p, i)=>{
+                  const iso = toISO(new Date(start.getTime() + i * 86400000));
+                  const c = checks[`${iso}_d${p.day}`] || {};
+                  const done = PRAYER_BLOCKS.filter((b)=>c[b.key]).length;
+                  return (
+                    <div key={p.day} className={`rounded-xl border p-3 ${i===currentIdx? 'bg-indigo-50 border-indigo-200' : 'bg-white/60'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="font-semibold">Day {p.day}</div>
+                        <Badge>{p.type}</Badge>
+                      </div>
+                      <div className="text-sm mt-1">{iso}</div>
+                      <div className="text-sm">Focus: <span className="font-medium">{p.focus}</span></div>
+                      <div className="text-xs opacity-80">{p.scriptures.join(", ")}</div>
+                      <div className="mt-2 h-1.5 bg-slate-200 rounded-full overflow-hidden"><div className="h-full bg-black/80" style={{width: `${Math.round(done/PRAYER_BLOCKS.length*100)}%`}}/></div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </NiceCard>
+    </div>
+
+    {/* Edit windows modal */}
+    <AnimatePresence>
+      {showWinEdit && (
+        <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <motion.div initial={{scale:0.95, opacity:0}} animate={{scale:1, opacity:1}} exit={{scale:0.95, opacity:0}} className="bg-white rounded-2xl shadow-xl w-full max-w-xl p-5">
+            <div className="flex items-center justify-between mb-3"><h3 className="font-semibold">Edit Fasting Windows</h3><button onClick={()=>setShowWinEdit(false)}><X className="w-4 h-4"/></button></div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="border rounded-xl p-3">
+                <h4 className="font-medium mb-2 flex items-center gap-2"><Droplet className="w-4 h-4"/> Water</h4>
+                <label className="text-xs">Start</label>
+                <input type="time" value={windows.waterStart} onChange={(e)=>setWindows({...windows, waterStart:e.target.value})} className="w-full rounded-lg border p-2 mb-2"/>
+                <label className="text-xs">End</label>
+                <input type="time" value={windows.waterEnd} onChange={(e)=>setWindows({...windows, waterEnd:e.target.value})} className="w-full rounded-lg border p-2"/>
+              </div>
+              <div className="border rounded-xl p-3">
+                <h4 className="font-medium mb-2 flex items-center gap-2"><Flame className="w-4 h-4"/> Dry</h4>
+                <label className="text-xs">Start</label>
+                <input type="time" value={windows.dryStart} onChange={(e)=>setWindows({...windows, dryStart:e.target.value})} className="w-full rounded-lg border p-2 mb-2"/>
+                <label className="text-xs">End</label>
+                <input type="time" value={windows.dryEnd} onChange={(e)=>setWindows({...windows, dryEnd:e.target.value})} className="w-full rounded-lg border p-2"/>
+              </div>
+              <div className="border rounded-xl p-3 sm:col-span-2">
+                <h4 className="font-medium mb-2 flex items-center gap-2"><Moon className="w-4 h-4"/> Esther (24h dry)</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs">Start</label>
+                    <input type="time" value={windows.estherStart} onChange={(e)=>setWindows({...windows, estherStart:e.target.value})} className="w-full rounded-lg border p-2"/>
+                  </div>
+                  <div>
+                    <label className="text-xs">End</label>
+                    <input type="time" value={windows.estherEnd} onChange={(e)=>setWindows({...windows, estherEnd:e.target.value})} className="w-full rounded-lg border p-2"/>
+                  </div>
+                </div>
+                <p className="text-xs mt-2 opacity-70">Tip: set 00:00→24:00 for a calendar‑day Esther fast.</p>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={()=>setWindows(DEFAULT_WINDOWS)} className="rounded-xl px-4 py-2 border">Reset</button>
+              <button onClick={()=>setShowWinEdit(false)} className="rounded-xl px-4 py-2 border bg-black text-white">Done</button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    {/* Footer */}
+    <div className="text-center text-xs opacity-70 mt-8">
+      Built for Kutollo C • Auto‑saves locally • Change start date to align with your 10‑day window.
     </div>
   </div>
 
-  <div class="right">
-    <div class="panel">
-      <h3>Upload photos for slideshow</h3>
-      <p class="small">Select multiple pictures of you and your girlfriend. They will play when a smile is detected.</p>
-      <input id="picsInput" type="file" accept="image/*" multiple>
-      <div id="thumbs" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
-
-      <hr style="margin:12px 0">
-      <h3>Settings</h3>
-      <label class="small">Smile threshold: <span id="thVal">0.75</span></label>
-      <input id="threshold" type="range" min="0.4" max="0.98" step="0.01" value="0.75">
-
-      <label class="small">Slideshow interval (ms)</label>
-      <input id="interval" type="number" value="2500" style="width:100%">
-    </div>
-  </div>
+  <style>{`
+    @media print {
+      header, .recharts-wrapper, button, .fixed { display: none !important; }
+      textarea { min-height: 240px; }
+      .bg-gradient-to-br { background: white !important; }
+      .rounded-2xl { border: 1px solid #000 !important; }
+    }
+  `}</style>
 </div>
 
-<footer>Tip: Allow camera access. When you smile the message appears and the slideshow will play.</footer>
+); }
 
-  </div>  <!-- face-api.js from CDN. Models are loaded from a public model repo. -->  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>  <script>
-    // Elements
-    const webcam = document.getElementById('webcam');
-    const startBtn = document.getElementById('startBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const testSmile = document.getElementById('testSmile');
-    const messageBox = document.getElementById('messageBox');
-    const picsInput = document.getElementById('picsInput');
-    const thumbs = document.getElementById('thumbs');
-    const slideshow = document.getElementById('slideshow');
-    const threshold = document.getElementById('threshold');
-    const thVal = document.getElementById('thVal');
-    const intervalInput = document.getElementById('interval');
-    const pauseSlides = document.getElementById('pauseSlides');
-    const resumeSlides = document.getElementById('resumeSlides');
-    const clearSlides = document.getElementById('clearSlides');
-
-    // models url - using public hosted models
-    const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models/'
-
-    let stream = null;
-    let detectInterval = null;
-    let slideInterval = null;
-    let slides = [];
-    let currentSlide = 0;
-    let slidesPlaying = false;
-    let lastSmileTime = 0;
-    const SMILE_COOLDOWN = 5000; // ms between triggers
-
-    thVal.innerText = threshold.value;
-    threshold.addEventListener('input', ()=> thVal.innerText = threshold.value);
-
-    // load face-api models
-    async function loadModels(){
-      // load tiny face detector and expression model
-      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-      await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
-    }
-
-    // start camera
-    async function startCamera(){
-      if (stream) return;
-      try{
-        stream = await navigator.mediaDevices.getUserMedia({video:true,audio:false});
-        webcam.srcObject = stream;
-        await webcam.play();
-        // begin detection loop
-        startDetectionLoop();
-      } catch(err){
-        alert('Could not access camera: ' + err.message);
-      }
-    }
-
-    function stopCamera(){
-      if (stream){
-        stream.getTracks().forEach(t=>t.stop());
-        stream = null;
-      }
-      webcam.pause(); webcam.srcObject = null;
-      stopDetectionLoop();
-    }
-
-    // detection
-    function startDetectionLoop(){
-      if (detectInterval) return;
-      detectInterval = setInterval(async ()=>{
-        if (webcam.readyState < 2) return;
-        const options = new faceapi.TinyFaceDetectorOptions({inputSize:160, scoreThreshold:0.5});
-        const res = await faceapi.detectSingleFace(webcam, options).withFaceExpressions();
-        if (!res) return;
-        const happy = res.expressions.happy || 0;
-        // trigger if above threshold and cooldown elapsed
-        const th = parseFloat(threshold.value);
-        const now = Date.now();
-        if (happy >= th && now - lastSmileTime > SMILE_COOLDOWN){
-          lastSmileTime = now;
-          triggerSmile();
-        }
-      }, 300);
-    }
-    function stopDetectionLoop(){ if (detectInterval){ clearInterval(detectInterval); detectInterval = null } }
-
-    // when smile detected
-    function triggerSmile(){
-      showMessage();
-      playChime();
-      if (slides.length) startSlideshow();
-    }
-
-    // message animation
-    let msgTimeout = null;
-    function showMessage(){
-      messageBox.classList.remove('hidden');
-      // auto hide after 6s
-      if (msgTimeout) clearTimeout(msgTimeout);
-      msgTimeout = setTimeout(()=> messageBox.classList.add('hidden'), 6000);
-    }
-
-    // simple chime using WebAudio
-    function playChime(){
-      try{
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const o = ctx.createOscillator(); const g = ctx.createGain();
-        o.type = 'sine'; o.frequency.value = 880;
-        g.gain.value = 0.0001;
-        o.connect(g); g.connect(ctx.destination);
-        o.start();
-        // ramp up then down
-        g.gain.exponentialRampToValueAtTime(0.03, ctx.currentTime + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
-        o.stop(ctx.currentTime + 0.55);
-      } catch(e){ console.warn('Audio play failed', e) }
-    }
-
-    // slideshow management
-    function buildSlides(){
-      slideshow.innerHTML = '';
-      slides.forEach((src,i)=>{
-        const img = document.createElement('img');
-        img.src = src; img.className = 'slide';
-        img.style.opacity = i===0 ? '1' : '0';
-        slideshow.appendChild(img);
-      });
-    }
-
-    function startSlideshow(){
-      if (slidesPlaying) return;
-      if (!slides.length) return;
-      slideshow.classList.add('show');
-      slidesPlaying = true;
-      currentSlide = 0;
-      const imgs = slideshow.querySelectorAll('.slide');
-      imgs.forEach((im,i)=> im.style.opacity = i===0 ? '1' : '0');
-      const ms = Math.max(500, parseInt(intervalInput.value) || 2500);
-      slideInterval = setInterval(()=>{
-        const prev = currentSlide;
-        currentSlide = (currentSlide + 1) % slides.length;
-        imgs[prev].style.opacity = '0';
-        imgs[currentSlide].style.opacity = '1';
-      }, ms);
-    }
-    function pauseSlideshow(){ if (slideInterval){ clearInterval(slideInterval); slideInterval = null; slidesPlaying = false } }
-    function resumeSlideshow(){ if (!slidesPlaying) startSlideshow() }
-    function stopSlideshow(){ pauseSlideshow(); slideshow.classList.remove('show'); }
-
-    // handle uploaded images
-    picsInput.addEventListener('change', e=>{
-      const files = Array.from(e.target.files || []);
-      files.forEach(f=>{
-        const url = URL.createObjectURL(f);
-        slides.push(url);
-        const tn = document.createElement('img'); tn.src = url; tn.style.width = '64px'; tn.style.height = '64px'; tn.style.objectFit='cover'; tn.style.borderRadius='6px';
-        thumbs.appendChild(tn);
-      });
-      buildSlides();
-    });
-
-    clearSlides.addEventListener('click', ()=>{
-      slides.forEach(s=>URL.revokeObjectURL(s)); slides = []; thumbs.innerHTML = ''; buildSlides(); stopSlideshow();
-    });
-    pauseSlides.addEventListener('click', pauseSlideshow);
-    resumeSlides.addEventListener('click', resumeSlideshow);
-
-    // start/stop buttons
-    startBtn.addEventListener('click', async ()=>{
-      startBtn.disabled = true; await loadModels(); await startCamera(); startBtn.disabled = false;
-    });
-    stopBtn.addEventListener('click', ()=>{ stopCamera(); stopSlideshow(); });
-
-    // quick test button: simulate smile
-    testSmile.addEventListener('click', ()=> triggerSmile());
-
-    // cleanup on page unload
-    window.addEventListener('unload', ()=>{ stopCamera(); slides.forEach(s=>URL.revokeObjectURL(s)); });
-
-    // note: models are fetched from a public model host. If the models fail to load, check console for network errors.
-  </script></body>
-</html>
