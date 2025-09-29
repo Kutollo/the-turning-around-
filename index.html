@@ -3,87 +3,240 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Premium Fasting App</title>
+<title>30 Day Challenge Tracker</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Inter',sans-serif;background:#0f172a;color:#f8fafc;overflow-x:hidden;}
-.container{max-width:1200px;margin:auto;padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-h1{grid-column:1/-1;text-align:center;color:#6366f1;margin-bottom:15px;font-size:2rem;}
-.timer{grid-column:1/-1;text-align:center;font-size:1.3rem;font-weight:600;margin-bottom:20px;color:#facc15;position:relative;}
-.card{background:#1e293b;border-radius:20px;padding:25px;box-shadow:0 10px 20px rgba(0,0,0,0.5);position:relative;overflow:hidden;transition:transform 0.3s;}
-.card:hover{transform:translateY(-5px);}
-.gradient-bg{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;border-radius:20px;background:linear-gradient(135deg,#6366f1,#fbbf24);opacity:0.25;animation:gradient 8s ease infinite;}
-@keyframes gradient{0%{background:linear-gradient(135deg,#6366f1,#fbbf24);}
-25%{background:linear-gradient(135deg,#f43f5e,#10b981);}
-50%{background:linear-gradient(135deg,#facc15,#3b82f6);}
-75%{background:linear-gradient(135deg,#8b5cf6,#f472b6);}
-100%{background:linear-gradient(135deg,#6366f1,#fbbf24);}}
-.card h2{position:relative;z-index:1;margin-bottom:10px;color:#fbbf24;}
-.verse{background:#334155;padding:12px;border-radius:12px;margin:12px 0;position:relative;z-index:1;}
-.prayer-point{background:#1e40af;padding:8px 12px;border-radius:12px;margin:6px 4px 6px 0;display:inline-block;font-weight:500;cursor:pointer;transition:0.2s;position:relative;z-index:1;}
-.prayer-point.active{background:#fbbf24;color:#0f172a;transform:scale(1.1);}
-textarea{width:100%;height:120px;padding:12px;border-radius:12px;border:none;margin-top:12px;resize:none;background:#334155;color:white;position:relative;z-index:1;}
-.btn{background:#6366f1;color:white;border:none;padding:10px 18px;border-radius:12px;cursor:pointer;font-weight:600;margin-top:10px;position:relative;z-index:1;transition:0.2s;}
-.btn:hover{background:#818cf8;}
-canvas{grid-column:1/-1;margin-top:20px;background:#1e293b;border-radius:20px;padding:15px;}
-@media(max-width:900px){.container{grid-template-columns:1fr;}}
+  body {
+    margin:0;
+    font-family: 'Segoe UI', sans-serif;
+    background-size: cover;
+    background-position: center;
+    transition: background-image 1s ease-in-out;
+    color: #333;
+  }
+  header {
+    text-align: center;
+    padding: 1rem;
+    background: rgba(255,255,255,0.8);
+  }
+  h1 { margin:0; }
+  .verse-box, .progress-container, .calendar-container, .chart-container {
+    max-width: 800px;
+    margin: 1rem auto;
+    padding: 1rem;
+    background: rgba(255,255,255,0.8);
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  .calendar {
+    display: grid;
+    grid-template-columns: repeat(7,1fr);
+    gap:5px;
+  }
+  .day {
+    padding:10px;
+    border-radius:6px;
+    background:white;
+    text-align:center;
+    cursor:pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  .day.completed { background:#b2f7b0; }
+  .day.today { border:2px solid #4a6fa5; font-weight:bold; background:#dce9ff; }
+  .progress-bar {
+    height: 20px;
+    width: 0%;
+    background:#4a6fa5;
+    border-radius: 10px;
+    text-align:center;
+    color:white;
+    line-height:20px;
+    transition: width 0.3s;
+  }
+  .modal {
+    display:none;
+    position:fixed;
+    top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.5);
+    justify-content:center;
+    align-items:center;
+    z-index:100;
+  }
+  .modal-content {
+    background:white;
+    padding:1rem;
+    border-radius:10px;
+    max-width:400px;
+    width:90%;
+  }
+  .close { float:right; cursor:pointer; font-weight:bold; }
+  input[type=checkbox]{margin-right:8px;}
+  input[type=number]{width:80px;}
+  canvas { background: rgba(255,255,255,0.8); border-radius:12px; }
 </style>
 </head>
 <body>
-<h1>Premium 10-Day Fasting App</h1>
-<div class="timer" id="timer">Loading timer...</div>
-<div class="container">
-  <div class="card">
-    <div class="gradient-bg"></div>
-    <h2 id="dayTitle"></h2>
-    <p id="dayFocus"></p>
-    <div class="verse" id="verse"></div>
-    <div id="prayerPoints" class="prayer-point-container"></div>
-    <textarea id="notes" placeholder="Journal notes..."></textarea>
-    <button class="btn" onclick="saveNotes()">Save Notes</button>
-  </div>
-  <div class="card">
-    <div class="gradient-bg"></div>
-    <h2>Next Day Preview</h2>
-    <p id="nextDayFocus"></p>
-    <div class="verse" id="nextVerse"></div>
-    <div id="nextPrayerPoints" class="prayer-point-container"></div>
-  </div>
-  <canvas id="progressChart" width="800" height="200"></canvas>
+<header>
+<h1>30 Day Challenge Tracker</h1>
+<p>Faith-based journey, health and habits</p>
+</header>
+
+<div class="verse-box">
+  <h3>Verse of the Day</h3>
+  <p id="verse"></p>
+  <h3>Motivational Quote</h3>
+  <p id="quote"></p>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<div class="progress-container">
+  <div class="progress-bar" id="progress-bar">0%</div>
+</div>
+
+<div class="calendar-container">
+<h2 style="text-align:center;">Calendar</h2>
+<div class="calendar" id="calendar"></div>
+</div>
+
+<div class="chart-container">
+<h2 style="text-align:center;">Weight Progress</h2>
+<canvas id="weightChart" width="700" height="300"></canvas>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <span class="close" id="modal-close">&times;</span>
+    <h3 id="modal-day-title">Day</h3>
+    <div>
+      <label><input type="checkbox" id="habit-sugar"> No Sugar</label><br>
+      <label><input type="checkbox" id="habit-junk"> No Fast Food</label><br>
+      <label><input type="checkbox" id="habit-private"> Private Goal</label><br>
+    </div>
+    <div style="margin-top:10px;" id="weight-input-div">
+      <label>Weight: <input type="number" id="weight-input"> kg</label>
+    </div>
+    <div style="margin-top:10px;">
+      <textarea id="note" rows="4" style="width:100%;" placeholder="Notes/Reflections"></textarea>
+    </div>
+    <button id="save-day" style="margin-top:10px;">Save</button>
+  </div>
+</div>
+
 <script>
-// Start date is tomorrow
-let startISO = new Date(); startISO.setDate(startISO.getDate()+1); startISO=startISO.toISOString().slice(0,10);
-
-const PLAN=[
-{ day:1,type:"Water",focus:"Cleansing & repentance",scripture:"Psalm 51:10–12",prayerPoints:["Repent of all sin","Ask for cleansing","Pray for pure heart"] },
-{ day:2,type:"Dry",focus:"Break sexual strongholds",scripture:"1 Thess 4:3–4",prayerPoints:["Break lust","Pray for self-control","Resist temptation"] },
-{ day:3,type:"Water",focus:"Renewed mind & purity",scripture:"Romans 12:1–2",prayerPoints:["Renew mind","Pray for holiness","Commit to righteousness"] },
-{ day:4,type:"Esther",focus:"R60 000 fees breakthrough",scripture:"Esther 4:16",prayerPoints:["Pray for funding","Open financial doors","Trust God's provision"] },
-{ day:5,type:"Water",focus:"Provision & favour",scripture:"Philippians 4:19",prayerPoints:["Bless finances","Ask for favour","Receive provision"] },
-{ day:6,type:"Dry",focus:"Brother: freedom from alcohol",scripture:"Isaiah 61:1–3",prayerPoints:["Deliver brother","Pray for strength","Break addictions"] },
-{ day:7,type:"Water",focus:"Family forgiveness & restoration",scripture:"Colossians 3:13",prayerPoints:["Forgive family","Restore relationships","Pray for unity"] },
-{ day:8,type:"Dry",focus:"Healing from depression",scripture:"Psalm 34:17–18",prayerPoints:["Pray for healing","Peace of mind","Joy restoration"] },
-{ day:9,type:"Water",focus:"Thanksgiving & sealing",scripture:"Philippians 4:6–7",prayerPoints:["Thank God","Seal breakthroughs","Praise continually"] },
-{ day:10,type:"Esther",focus:"Final push for all points",scripture:"Joel 2:12–13",prayerPoints:["Cover all prayers","Pray for victory","Commit fully"] }
+const verses=[
+"I can do all things through Christ who strengthens me. — Philippians 4:13",
+"So whether you eat or drink or whatever you do, do it all for the glory of God. — 1 Corinthians 10:31",
+"Let us not become weary in doing good, for at the proper time we will reap a harvest if we do not give up. — Galatians 6:9",
+"For God gave us a spirit not of fear but of power and love and self-control. — 2 Timothy 1:7",
+"The Lord is my strength and my shield; my heart trusts in him, and he helps me. — Psalm 28:7"
 ];
+const quotes=[
+"Every step counts, small changes build steady habits.",
+"Discipline today gifts freedom tomorrow.",
+"Stay strong, stay faithful, your efforts matter."
+];
+const images=[
+'https://plus.unsplash.com/premium_photo-1671599016130-7882dbff302f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8bW90aXZhdGlvbmFsfGVufDB8fDB8fHww',
+'https://images.unsplash.com/photo-1528716321680-815a8cdb8cbe?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bW90aXZhdGlvbmFsfGVufDB8fDB8fHww',
+'https://plus.unsplash.com/premium_photo-1674489620667-eaf4a0094996?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8bW90aXZhdGlvbmFsfGVufDB8fDB8fHww',
+'https://images.unsplash.com/photo-1564410267841-915d8e4d71ea?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8bW90aXZhdGlvbmFsfGVufDB8fDB8fHww',
+'https://plus.unsplash.com/premium_photo-1694822449501-59bb095f39f2?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTN8fG1vdGl2YXRpb25hbHxlbnwwfHwwfHx8MA%3D%3D',
+'https://images.unsplash.com/photo-1617251137884-f135eccf6942?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mzh8fG1vdGl2YXRpb25hbHxlbnwwfHwwfHx8MA%3D%3D'
+];
+function updateBackground(){
+  const index=new Date().getDate()%images.length;
+  document.body.style.backgroundImage=`url(${images[index]})`;
+}
+updateBackground();
 
-let checks=JSON.parse(localStorage.getItem('fs_checks')||'{}');
-let notes=localStorage.getItem('fs_notes')||'';
+const today=new Date();
+const calendar=document.getElementById('calendar');
+let state=JSON.parse(localStorage.getItem('challengeState'))||{};
+if(!state.days){state.days={};for(let i=1;i<=30;i++)state.days[i]={sugar:false,junk:false,private:false,note:'',weight:''};}
 
-function getCurrentDay(){const today=new Date();const start=new Date(startISO);const diff=Math.floor((today-start)/(1000*60*60*24));return Math.min(Math.max(diff,0),PLAN.length-1);}
-function renderDay(){const idx=getCurrentDay();const day=PLAN[idx];const nextDay=PLAN[Math.min(idx+1,PLAN.length-1)];document.getElementById('dayTitle').innerText=`Day ${day.day}: ${day.type} Fast`;document.getElementById('dayFocus').innerText=day.focus;document.getElementById('verse').innerText=`Verse: ${day.scripture}`;const pbContainer=document.getElementById('prayerPoints');pbContainer.innerHTML='';day.prayerPoints.forEach((p,i)=>{const active=checks[`d${day.day}`]?.[i]?'active':'';const btn=document.createElement('span');btn.className=`prayer-point ${active}`;btn.innerText=p;btn.onclick=()=>toggleCheck(i);pbContainer.appendChild(btn);});document.getElementById('notes').value=notes;document.getElementById('nextDayFocus').innerText=nextDay.focus;document.getElementById('nextVerse').innerText=`Verse: ${nextDay.scripture}`;const nextContainer=document.getElementById('nextPrayerPoints');nextContainer.innerHTML='';nextDay.prayerPoints.forEach(p=>{const span=document.createElement('span');span.className='prayer-point';span.innerText=p;nextContainer.appendChild(span);});}
-function toggleCheck(idx){const day=PLAN[getCurrentDay()].day;checks[`d${day}`]=checks[`d${day}`]||{};checks[`d${day}`][idx]=!checks[`d${day}`][idx];localStorage.setItem('fs_checks',JSON.stringify(checks));renderDay();renderProgressChart();if(Object.values(checks[`d${day}`]).filter(v=>v).length===PLAN[getCurrentDay()].prayerPoints.length){confetti({particleCount:150,spread:70,origin:{y:0.6}});}}
-function saveNotes(){notes=document.getElementById('notes').value;localStorage.setItem('fs_notes',notes);alert('Notes saved!');}
-function renderProgressChart(){const data=PLAN.map(p=>{const dayChecks=checks[`d${p.day}`]||{};const pct=Math.round((Object.values(dayChecks).filter(v=>v).length/p.prayerPoints.length)*100);return {day:`D${p.day}`,completion:pct};});const ctx=document.getElementById('progressChart').getContext('2d');if(window.chart)window.chart.destroy();window.chart=new Chart(ctx,{type:'line',data:{labels:data.map(d=>d.day),datasets:[{label:'Completion %',data:data.map(d=>d.completion),fill:true,backgroundColor:'rgba(99,102,241,0.2)',borderColor:'#6366f1',tension:0.4}]},options:{responsive:true,scales:{y:{beginAtZero:true,max:100}}}});}
-function updateTimer(){const now=new Date();const start=new Date();start.setHours(0,0,0,0);const end=new Date();end.setHours(17,0,0,0);let diff=now<start?start-now:end-now;if(diff<0)diff=0;const hrs=Math.floor(diff/1000/60/60);const mins=Math.floor((diff/1000/60)%60);const secs=Math.floor((diff/1000)%60);const label=now>=start&&now<=end?'Time left in fast':'Time until fast starts';document.getElementById('timer').innerText=`${label}: ${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;}
-setInterval(updateTimer,1000);
-renderDay();
-renderProgressChart();
+function updateProgressBar(){
+  let completed=0;
+  for(let i=1;i<=30;i++){
+    const d=state.days[i];
+    if(d.sugar&&d.junk&&d.private)completed++;
+  }
+  const percent=Math.round((completed/30)*100);
+  const bar=document.getElementById('progress-bar');
+  bar.style.width=percent+'%';
+  bar.textContent=percent+'%';
+}
+
+function generateCalendar(){
+  calendar.innerHTML='';
+  const firstDay=new Date(today.getFullYear(),today.getMonth(),1).getDay();
+  const lastDay=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+  for(let i=0;i<firstDay;i++)calendar.appendChild(document.createElement('div'));
+  for(let d=1;d<=lastDay;d++){
+    const dayEl=document.createElement('div');
+    dayEl.textContent=d;
+    dayEl.classList.add('day');
+    if(d===today.getDate())dayEl.classList.add('today');
+    dayEl.dataset.day=d;
+    dayEl.addEventListener('click',()=>openModal(d));
+    if(state.days[d] && state.days[d].sugar && state.days[d].junk && state.days[d].private) dayEl.classList.add('completed');
+    calendar.appendChild(dayEl);
+  }
+}
+
+function openModal(day){
+  const modal=document.getElementById('modal');
+  modal.style.display='flex';
+  document.getElementById('modal-day-title').textContent=`Day ${day}`;
+  const data=state.days[day];
+  document.getElementById('habit-sugar').checked=data.sugar;
+  document.getElementById('habit-junk').checked=data.junk;
+  document.getElementById('habit-private').checked=data.private;
+  document.getElementById('note').value=data.note;
+  const weightDiv=document.getElementById('weight-input-div');
+  if(day%5===0){ weightDiv.style.display='block'; document.getElementById('weight-input').value=data.weight; }
+  else weightDiv.style.display='none';
+  document.getElementById('save-day').onclick=()=>saveDay(day);
+}
+
+function saveDay(day){
+  const data=state.days[day];
+  data.sugar=document.getElementById('habit-sugar').checked;
+  data.junk=document.getElementById('habit-junk').checked;
+  data.private=document.getElementById('habit-private').checked;
+  data.note=document.getElementById('note').value;
+  if(day%5===0) data.weight=document.getElementById('weight-input').value;
+  localStorage.setItem('challengeState',JSON.stringify(state));
+  generateCalendar();
+  updateProgressBar();
+  modal.style.display='none';
+  updateChart();
+}
+
+document.getElementById('modal-close').onclick=()=>document.getElementById('modal').style.display='none';
+generateCalendar();
+updateProgressBar();
+
+function getRandom(array){ return array[Math.floor(Math.random()*array.length)]; }
+document.getElementById('verse').textContent=getRandom(verses);
+document.getElementById('quote').textContent=getRandom(quotes);
+
+// Weight Chart
+const ctx=document.getElementById('weightChart').getContext('2d');
+let chart=null;
+function updateChart(){
+  const labels=[]; const dataArr=[];
+  for(let i=5;i<=30;i+=5){
+    labels.push(`Day ${i}`);
+    const w=state.days[i] ? state.days[i].weight : null;
+    dataArr.push(w || null);
+  }
+  if(chart) chart.destroy();
+  chart=new Chart(ctx,{ type:'line', data:{ labels, datasets:[{ label:'Weight (kg)', data:dataArr, fill:false, borderColor:'#4a6fa5', tension:0.2, pointBackgroundColor:'#4a6fa5' }] }, options:{ responsive:true, scales:{ y:{ beginAtZero:false } } } });
+}
+
+// Include Chart.js
+const script=document.createElement('script');
+script.src='https://cdn.jsdelivr.net/npm/chart.js';
+document.head.appendChild(script);
+script.onload=()=>updateChart();
 </script>
 </body>
 </html>
