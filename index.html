@@ -1,242 +1,282 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>30 Day Challenge Tracker</title>
-<style>
-  body {
-    margin:0;
-    font-family: 'Segoe UI', sans-serif;
-    background-size: cover;
-    background-position: center;
-    transition: background-image 1s ease-in-out;
-    color: #333;
-  }
-  header {
-    text-align: center;
-    padding: 1rem;
-    background: rgba(255,255,255,0.8);
-  }
-  h1 { margin:0; }
-  .verse-box, .progress-container, .calendar-container, .chart-container {
-    max-width: 800px;
-    margin: 1rem auto;
-    padding: 1rem;
-    background: rgba(255,255,255,0.8);
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  }
-  .calendar {
-    display: grid;
-    grid-template-columns: repeat(7,1fr);
-    gap:5px;
-  }
-  .day {
-    padding:10px;
-    border-radius:6px;
-    background:white;
-    text-align:center;
-    cursor:pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
-  .day.completed { background:#b2f7b0; }
-  .day.today { border:2px solid #4a6fa5; font-weight:bold; background:#dce9ff; }
-  .progress-bar {
-    height: 20px;
-    width: 0%;
-    background:#4a6fa5;
-    border-radius: 10px;
-    text-align:center;
-    color:white;
-    line-height:20px;
-    transition: width 0.3s;
-  }
-  .modal {
-    display:none;
-    position:fixed;
-    top:0; left:0; width:100%; height:100%;
-    background:rgba(0,0,0,0.5);
-    justify-content:center;
-    align-items:center;
-    z-index:100;
-  }
-  .modal-content {
-    background:white;
-    padding:1rem;
-    border-radius:10px;
-    max-width:400px;
-    width:90%;
-  }
-  .close { float:right; cursor:pointer; font-weight:bold; }
-  input[type=checkbox]{margin-right:8px;}
-  input[type=number]{width:80px;}
-  canvas { background: rgba(255,255,255,0.8); border-radius:12px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>30-Day Plank & Push-Up Challenge</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background:  #1e88e5;
+      color: white;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 900px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color:  #1e88e5
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      text-align: center;
+      padding: 10px;
+    }
+
+    th {
+      background:  #1e88e5;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+
+    .completed-morning {
+      background: #b3e5fc; /* Sky blue */
+    }
+
+    .completed-evening {
+      background: #81d4fa; /* Deeper sky blue */
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background:  #1e88e5;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background:  #1e88e5;
+    }
+
+    /* Progress bar */
+    .progress-container {
+      background: #ddd;
+      border-radius: 10px;
+      height: 20px;
+      margin: 20px 0;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #1e88e5; /* Sky blue progress bar */
+      transition: width 0.3s ease;
+    }
+
+    /* Timer */
+    .timer {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .timer-display {
+      font-size: 2rem;
+      margin: 10px 0;
+      color: #1e88e5;
+    }
+
+    .timer-buttons button {
+      margin: 0 5px;
+      background: #1e88e5;
+    }
+
+    .timer-buttons button:hover {
+      background: #1565c0;
+    }
+  </style>
 </head>
 <body>
-<header>
-<h1>30 Day Challenge Tracker</h1>
-<p>Faith-based journey, health and habits</p>
-</header>
+  <header>
+    <h1>30-Day Plank & Push-Up Challenge</h1>
+    <p>Morning & Evening – Stay consistent, stay strong</p>
+  </header>
 
-<div class="verse-box">
-  <h3>Verse of the Day</h3>
-  <p id="verse"></p>
-  <h3>Motivational Quote</h3>
-  <p id="quote"></p>
-</div>
-
-<div class="progress-container">
-  <div class="progress-bar" id="progress-bar">0%</div>
-</div>
-
-<div class="calendar-container">
-<h2 style="text-align:center;">Calendar</h2>
-<div class="calendar" id="calendar"></div>
-</div>
-
-<div class="chart-container">
-<h2 style="text-align:center;">Weight Progress</h2>
-<canvas id="weightChart" width="700" height="300"></canvas>
-</div>
-
-<div class="modal" id="modal">
-  <div class="modal-content">
-    <span class="close" id="modal-close">&times;</span>
-    <h3 id="modal-day-title">Day</h3>
-    <div>
-      <label><input type="checkbox" id="habit-sugar"> No Sugar</label><br>
-      <label><input type="checkbox" id="habit-junk"> No Fast Food</label><br>
-      <label><input type="checkbox" id="habit-private"> Private Goal</label><br>
+  <div class="container">
+    <h2>Your Progress</h2>
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
     </div>
-    <div style="margin-top:10px;" id="weight-input-div">
-      <label>Weight: <input type="number" id="weight-input"> kg</label>
+    <p id="progressText" style="text-align:center;"></p>
+
+    <h2>Challenge Calendar</h2>
+    <table id="challengeTable">
+      <thead>
+        <tr>
+          <th>Day</th>
+          <th>Plank (Each Session)</th>
+          <th>Push-Ups (Each Session)</th>
+          <th>Morning Done?</th>
+          <th>Evening Done?</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <button onclick="resetProgress()">Reset Progress</button>
+
+    <div class="timer">
+      <h2>Plank Timer</h2>
+      <div class="timer-display" id="timerDisplay">00:00</div>
+      <div class="timer-buttons">
+        <button onclick="startTimer()">Start</button>
+        <button onclick="pauseTimer()">Pause</button>
+        <button onclick="resetTimer()">Reset</button>
+      </div>
     </div>
-    <div style="margin-top:10px;">
-      <textarea id="note" rows="4" style="width:100%;" placeholder="Notes/Reflections"></textarea>
-    </div>
-    <button id="save-day" style="margin-top:10px;">Save</button>
   </div>
-</div>
 
-<script>
-const verses=[
-"I can do all things through Christ who strengthens me. — Philippians 4:13",
-"So whether you eat or drink or whatever you do, do it all for the glory of God. — 1 Corinthians 10:31",
-"Let us not become weary in doing good, for at the proper time we will reap a harvest if we do not give up. — Galatians 6:9",
-"For God gave us a spirit not of fear but of power and love and self-control. — 2 Timothy 1:7",
-"The Lord is my strength and my shield; my heart trusts in him, and he helps me. — Psalm 28:7"
-];
-const quotes=[
-"Every step counts, small changes build steady habits.",
-"Discipline today gifts freedom tomorrow.",
-"Stay strong, stay faithful, your efforts matter."
-];
-const images=[
-'https://plus.unsplash.com/premium_photo-1671599016130-7882dbff302f?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8bW90aXZhdGlvbmFsfGVufDB8fDB8fHww',
-'https://images.unsplash.com/photo-1528716321680-815a8cdb8cbe?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bW90aXZhdGlvbmFsfGVufDB8fDB8fHww',
-'https://plus.unsplash.com/premium_photo-1674489620667-eaf4a0094996?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8bW90aXZhdGlvbmFsfGVufDB8fDB8fHww',
-'https://images.unsplash.com/photo-1564410267841-915d8e4d71ea?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8bW90aXZhdGlvbmFsfGVufDB8fDB8fHww',
-'https://plus.unsplash.com/premium_photo-1694822449501-59bb095f39f2?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTN8fG1vdGl2YXRpb25hbHxlbnwwfHwwfHx8MA%3D%3D',
-'https://images.unsplash.com/photo-1617251137884-f135eccf6942?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mzh8fG1vdGl2YXRpb25hbHxlbnwwfHwwfHx8MA%3D%3D'
-];
-function updateBackground(){
-  const index=new Date().getDate()%images.length;
-  document.body.style.backgroundImage=`url(${images[index]})`;
-}
-updateBackground();
+  <script>
+    const challenge = [
+      { day: 1, plank: '1 min', pushups: 10 },
+      { day: 2, plank: '1 min 10 sec', pushups: 12 },
+      { day: 3, plank: '1 min 20 sec', pushups: 14 },
+      { day: 4, plank: '1 min 30 sec', pushups: 16 },
+      { day: 5, plank: '1 min 40 sec', pushups: 18 },
+      { day: 6, plank: '1 min 50 sec', pushups: 20 },
+      { day: 7, plank: 'Rest', pushups: 'Rest' },
+      { day: 8, plank: '2 min', pushups: 22 },
+      { day: 9, plank: '2 min 10 sec', pushups: 24 },
+      { day: 10, plank: '2 min 20 sec', pushups: 26 },
+      { day: 11, plank: '2 min 30 sec', pushups: 28 },
+      { day: 12, plank: '2 min 40 sec', pushups: 30 },
+      { day: 13, plank: '2 min 50 sec', pushups: 32 },
+      { day: 14, plank: 'Rest', pushups: 'Rest' },
+      { day: 15, plank: '3 min', pushups: 34 },
+      { day: 16, plank: '3 min 10 sec', pushups: 36 },
+      { day: 17, plank: '3 min 20 sec', pushups: 38 },
+      { day: 18, plank: '3 min 30 sec', pushups: 40 },
+      { day: 19, plank: '3 min 40 sec', pushups: 42 },
+      { day: 20, plank: '3 min 50 sec', pushups: 44 },
+      { day: 21, plank: 'Rest', pushups: 'Rest' },
+      { day: 22, plank: '4 min', pushups: 46 },
+      { day: 23, plank: '4 min 10 sec', pushups: 48 },
+      { day: 24, plank: '4 min 20 sec', pushups: 50 },
+      { day: 25, plank: '4 min 30 sec', pushups: 52 },
+      { day: 26, plank: '4 min 40 sec', pushups: 54 },
+      { day: 27, plank: '4 min 50 sec', pushups: 56 },
+      { day: 28, plank: 'Rest', pushups: 'Rest' },
+      { day: 29, plank: '5 min', pushups: 58 },
+      { day: 30, plank: 'Max Hold', pushups: 'Max Reps' }
+    ];
 
-const today=new Date();
-const calendar=document.getElementById('calendar');
-let state=JSON.parse(localStorage.getItem('challengeState'))||{};
-if(!state.days){state.days={};for(let i=1;i<=30;i++)state.days[i]={sugar:false,junk:false,private:false,note:'',weight:''};}
+    const tableBody = document.querySelector('#challengeTable tbody');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
 
-function updateProgressBar(){
-  let completed=0;
-  for(let i=1;i<=30;i++){
-    const d=state.days[i];
-    if(d.sugar&&d.junk&&d.private)completed++;
-  }
-  const percent=Math.round((completed/30)*100);
-  const bar=document.getElementById('progress-bar');
-  bar.style.width=percent+'%';
-  bar.textContent=percent+'%';
-}
+    let progress = JSON.parse(localStorage.getItem('plankPushProgress')) || {};
 
-function generateCalendar(){
-  calendar.innerHTML='';
-  const firstDay=new Date(today.getFullYear(),today.getMonth(),1).getDay();
-  const lastDay=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
-  for(let i=0;i<firstDay;i++)calendar.appendChild(document.createElement('div'));
-  for(let d=1;d<=lastDay;d++){
-    const dayEl=document.createElement('div');
-    dayEl.textContent=d;
-    dayEl.classList.add('day');
-    if(d===today.getDate())dayEl.classList.add('today');
-    dayEl.dataset.day=d;
-    dayEl.addEventListener('click',()=>openModal(d));
-    if(state.days[d] && state.days[d].sugar && state.days[d].junk && state.days[d].private) dayEl.classList.add('completed');
-    calendar.appendChild(dayEl);
-  }
-}
+    challenge.forEach(item => {
+      const row = document.createElement('tr');
+      const status = progress[item.day] || { morning: false, evening: false };
+      row.innerHTML = `
+        <td>${item.day}</td>
+        <td>${item.plank}</td>
+        <td>${item.pushups}</td>
+        <td><input type="checkbox" ${status.morning ? 'checked' : ''} onchange="toggleSession(${item.day}, 'morning', this)"></td>
+        <td><input type="checkbox" ${status.evening ? 'checked' : ''} onchange="toggleSession(${item.day}, 'evening', this)"></td>
+      `;
+      if (status.morning) row.classList.add('completed-morning');
+      if (status.evening) row.classList.add('completed-evening');
+      tableBody.appendChild(row);
+    });
 
-function openModal(day){
-  const modal=document.getElementById('modal');
-  modal.style.display='flex';
-  document.getElementById('modal-day-title').textContent=`Day ${day}`;
-  const data=state.days[day];
-  document.getElementById('habit-sugar').checked=data.sugar;
-  document.getElementById('habit-junk').checked=data.junk;
-  document.getElementById('habit-private').checked=data.private;
-  document.getElementById('note').value=data.note;
-  const weightDiv=document.getElementById('weight-input-div');
-  if(day%5===0){ weightDiv.style.display='block'; document.getElementById('weight-input').value=data.weight; }
-  else weightDiv.style.display='none';
-  document.getElementById('save-day').onclick=()=>saveDay(day);
-}
+    updateProgressBar();
 
-function saveDay(day){
-  const data=state.days[day];
-  data.sugar=document.getElementById('habit-sugar').checked;
-  data.junk=document.getElementById('habit-junk').checked;
-  data.private=document.getElementById('habit-private').checked;
-  data.note=document.getElementById('note').value;
-  if(day%5===0) data.weight=document.getElementById('weight-input').value;
-  localStorage.setItem('challengeState',JSON.stringify(state));
-  generateCalendar();
-  updateProgressBar();
-  modal.style.display='none';
-  updateChart();
-}
+    function toggleSession(day, session, checkbox) {
+      if (!progress[day]) progress[day] = { morning: false, evening: false };
+      progress[day][session] = checkbox.checked;
+      localStorage.setItem('plankPushProgress', JSON.stringify(progress));
 
-document.getElementById('modal-close').onclick=()=>document.getElementById('modal').style.display='none';
-generateCalendar();
-updateProgressBar();
+      const row = [...tableBody.children].find(r => parseInt(r.children[0].textContent) === day);
+      if (progress[day].morning) row.classList.add('completed-morning');
+      else row.classList.remove('completed-morning');
+      if (progress[day].evening) row.classList.add('completed-evening');
+      else row.classList.remove('completed-evening');
 
-function getRandom(array){ return array[Math.floor(Math.random()*array.length)]; }
-document.getElementById('verse').textContent=getRandom(verses);
-document.getElementById('quote').textContent=getRandom(quotes);
+      updateProgressBar();
+    }
 
-// Weight Chart
-const ctx=document.getElementById('weightChart').getContext('2d');
-let chart=null;
-function updateChart(){
-  const labels=[]; const dataArr=[];
-  for(let i=5;i<=30;i+=5){
-    labels.push(`Day ${i}`);
-    const w=state.days[i] ? state.days[i].weight : null;
-    dataArr.push(w || null);
-  }
-  if(chart) chart.destroy();
-  chart=new Chart(ctx,{ type:'line', data:{ labels, datasets:[{ label:'Weight (kg)', data:dataArr, fill:false, borderColor:'#4a6fa5', tension:0.2, pointBackgroundColor:'#4a6fa5' }] }, options:{ responsive:true, scales:{ y:{ beginAtZero:false } } } });
-}
+    function updateProgressBar() {
+      const totalSessions = challenge.length * 2;
+      const completedSessions = Object.values(progress).reduce((acc, val) => {
+        return acc + (val.morning ? 1 : 0) + (val.evening ? 1 : 0);
+      }, 0);
+      const percent = Math.round((completedSessions / totalSessions) * 100);
+      progressBar.style.width = percent + '%';
+      progressText.textContent = `${completedSessions} of ${totalSessions} sessions completed (${percent}%)`;
+    }
 
-// Include Chart.js
-const script=document.createElement('script');
-script.src='https://cdn.jsdelivr.net/npm/chart.js';
-document.head.appendChild(script);
-script.onload=()=>updateChart();
-</script>
+    function resetProgress() {
+      if (confirm('Reset all progress?')) {
+        localStorage.removeItem('plankPushProgress');
+        progress = {};
+        location.reload();
+      }
+    }
+
+    // Timer Logic
+    let timer;
+    let seconds = 0;
+    let running = false;
+    const timerDisplay = document.getElementById('timerDisplay');
+
+    function startTimer() {
+      if (!running) {
+        running = true;
+        timer = setInterval(() => {
+          seconds++;
+          displayTime(seconds);
+        }, 1000);
+      }
+    }
+
+    function pauseTimer() {
+      running = false;
+      clearInterval(timer);
+    }
+
+    function resetTimer() {
+      pauseTimer();
+      seconds = 0;
+      displayTime(seconds);
+    }
+
+    function displayTime(sec) {
+      const m = String(Math.floor(sec / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      timerDisplay.textContent = `${m}:${s}`;
+    }
+  </script>
 </body>
 </html>
